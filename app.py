@@ -27,16 +27,20 @@ import streamlit.components.v1 as components
 ROUND_MEDIA = {
     "Round 1": [
         # {"label": "Round 1 Video", "url": "https://www.dropbox.com/.../round1.mp4?raw=1", "type": "video"},
-        # {"label": "Round 1 Audio Clue", "url": "https://www.dropbox.com/.../round1_clue.mp3?raw=1", "type": "audio"},
+        {"label": "Round 1 Audio Clue", "url": "https://www.dropbox.com/scl/fo/6eehtwnqlgbmm2gkj8nit/ALC0yB9IAeIUOI8IM0HayMg/Detective%20Audio%20Files/Masquerade%20Round%201.mp3?rlkey=sgdb5jrpnd6q4ivnppdhkpma5&e=1&raw=1", "type": "audio"},
     ],
     "Round 2": [
-        # {"label": "Round 2 Video", "url": "...", "type": "video"},
+        # {"label": "Round 2 Video", "url": "https://www.dropbox.com/.../round2.mp4?raw=1", "type": "video"},
+        {"label": "Round 2 Audio Clue", "url": "https://www.dropbox.com/scl/fo/6eehtwnqlgbmm2gkj8nit/APvCW0u3jrwNHaehOwYRKnk/Detective%20Audio%20Files/Masquerade%20Round%202.mp3?rlkey=sgdb5jrpnd6q4ivnppdhkpma5&e=1&raw=1", "type": "audio"},
     ],
     "Round 3": [
-        # {"label": "Round 3 Video", "url": "...", "type": "video"},
+        # {"label": "Round 3 Video", "url": "?raw=1", "type": "video"},
+        {"label": "Round 3 Audio Clue", "url": "https://www.dropbox.com/scl/fo/6eehtwnqlgbmm2gkj8nit/AJnyG9ebrcbx4KPZhCbrYXc/Detective%20Audio%20Files/Masquerade%20Round%203.mp3?rlkey=sgdb5jrpnd6q4ivnppdhkpma5&e=1&raw=1", "type": "audio"},
     ],
     "Round 4": [
-        # {"label": "Round 4 Final Reveal", "url": "...", "type": "video"},
+        # {"label": "Round 4 Video", "url": "?raw=1", "type": "video"},
+        {"label": "Round 4 Audio Clue", "url": "https://www.dropbox.com/scl/fo/6eehtwnqlgbmm2gkj8nit/ANlg-cmO1jRUt4ZcdZfJEPA/Detective%20Audio%20Files/Masquerade%20Round%204.mp3?rlkey=sgdb5jrpnd6q4ivnppdhkpma5&e=1&raw=1", "type": "audio"},
+        {"label": "Round 4 Final Audio Clue", "url": "https://www.dropbox.com/scl/fo/6eehtwnqlgbmm2gkj8nit/AC3yFFFTubPe3QPMm_5Xhc8/Detective%20Audio%20Files/Masquerade%20Round%204%20Final.mp3?rlkey=sgdb5jrpnd6q4ivnppdhkpma5&e=1&raw=1", "type": "audio"},
     ],
 }
 
