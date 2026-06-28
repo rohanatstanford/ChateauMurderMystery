@@ -722,6 +722,67 @@ THUNDER_HTML = """
 # -----------------------------------------------------------------------------
 # Victorious fanfare (Tone.js)
 # -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# ESC-to-close handler
+# -----------------------------------------------------------------------------
+# Listens for the Escape key on as many DOM contexts as possible and clicks
+# any visible button whose text matches one of our close-button labels.
+# Used on both the fullscreen Reveal overlay and the fullscreen Closing page.
+ESC_CLOSE_HTML = """
+<!DOCTYPE html><html><head></head><body>
+<script>
+(function() {
+  const TARGETS = ['Close Reveal', 'Exit Closing'];
+  function clickClose() {
+    const docs = [];
+    try { docs.push(window.parent.document); } catch (e) {}
+    try { docs.push(window.top.document); } catch (e) {}
+    docs.push(document);
+    for (const d of docs) {
+      let buttons = [];
+      try { buttons = d.querySelectorAll('button'); } catch (e) { continue; }
+      for (const b of buttons) {
+        const t = (b.textContent || '').trim();
+        for (const needle of TARGETS) {
+          if (t.indexOf(needle) !== -1) { b.click(); return true; }
+        }
+      }
+    }
+    return false;
+  }
+  function isInteractive(el) {
+    if (!el) return false;
+    const tag = (el.tagName || '').toLowerCase();
+    if (tag === 'input' || tag === 'textarea' || tag === 'select') return true;
+    const role = (el.getAttribute && el.getAttribute('role') || '').toLowerCase();
+    if (role === 'combobox' || role === 'listbox' || role === 'textbox') return true;
+    return false;
+  }
+  function handler(e) {
+    if (e.key === 'Escape' || e.keyCode === 27) {
+      // Try each accessible document to figure out the active element
+      let active = null;
+      try { active = window.parent.document.activeElement; } catch (err) {}
+      if (!active) { try { active = document.activeElement; } catch (err) {} }
+      if (isInteractive(active)) return;  // let ESC blur the field naturally
+      e.preventDefault();
+      clickClose();
+    }
+  }
+  document.addEventListener('keydown', handler, true);
+  window.addEventListener('keydown', handler, true);
+  try { window.parent.document.addEventListener('keydown', handler, true); } catch (e) {}
+  try { window.parent.addEventListener('keydown', handler, true); } catch (e) {}
+  try { window.top.document.addEventListener('keydown', handler, true); } catch (e) {}
+  try { window.top.addEventListener('keydown', handler, true); } catch (e) {}
+  // Bring focus into the iframe so its own keydown fires if parent is cross-origin
+  try { window.focus(); } catch (e) {}
+})();
+</script>
+</body></html>
+"""
+
+
 VICTORIOUS_HTML = """
 <!DOCTYPE html><html><head></head><body>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
@@ -1030,19 +1091,33 @@ if st.session_state.reveal_active and st.session_state.murderer_letter is not No
     )
     # Thunder (separate 0-height iframe with Web Audio API)
     components.html(THUNDER_HTML, height=0)
-    # Top-right close control (rendered above the overlay via CSS)
+    # ESC-to-close handler (separate 0-height iframe)
+    components.html(ESC_CLOSE_HTML, height=0)
+    # Top-LEFT close control (rendered above the overlay via CSS).
+    # Targets the stButton wrapping our primary button.
     st.markdown(
         """
         <style>
-        div[data-testid="stVerticalBlock"]:has(button[kind="primary"]) {
-            position: fixed; top: 24px; right: 32px;
+        div[data-testid="stButton"]:has(button[kind="primary"]) {
+            position: fixed; top: 24px; left: 32px;
             z-index: 999999; width: auto !important;
+        }
+        div[data-testid="stButton"]:has(button[kind="primary"]) button {
+            background: rgba(10,7,3,0.85);
+            border: 2px solid #d4af37;
+            color: #f5d76e;
+            box-shadow: 0 0 22px rgba(245,215,110,0.5);
+            backdrop-filter: blur(4px);
+        }
+        div[data-testid="stButton"]:has(button[kind="primary"]) button:hover {
+            background: rgba(212,175,55,0.95);
+            color: #0a0a0a;
         }
         </style>
         """,
         unsafe_allow_html=True,
     )
-    if st.button("✕  Close Reveal", type="primary", key="close_reveal"):
+    if st.button("✕  Close Reveal  (Esc)", type="primary", key="close_reveal"):
         st.session_state.reveal_active = False
         st.rerun()
     st.stop()
@@ -1281,6 +1356,45 @@ elif stage in ("Round 2", "Round 3", "Round 4"):
 # CLOSING (fullscreen, multi-step)
 # =============================================================================
 elif stage == "Closing":
+    # ESC-to-close handler (clicks the Exit button on Escape)
+    components.html(ESC_CLOSE_HTML, height=0)
+
+    # Top-LEFT exit button. on_click runs before the next rerun, so it
+    # can safely set the stage radio's session_state value.
+    def _exit_closing_cb():
+        st.session_state._stage = "Setup"
+
+    st.markdown(
+        """
+        <style>
+        div[data-testid="stButton"]:has(button[kind="primary"]) {
+            position: fixed; top: 18px; left: 24px;
+            z-index: 999999; width: auto !important;
+        }
+        div[data-testid="stButton"]:has(button[kind="primary"]) button {
+            background: rgba(10,7,3,0.85);
+            border: 2px solid #d4af37;
+            color: #f5d76e;
+            box-shadow: 0 0 22px rgba(245,215,110,0.5);
+            backdrop-filter: blur(4px);
+            padding: 0.5em 1.2em;
+            font-size: 0.85rem;
+        }
+        div[data-testid="stButton"]:has(button[kind="primary"]) button:hover {
+            background: rgba(212,175,55,0.95);
+            color: #0a0a0a;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.button(
+        "✕  Exit Closing  (Esc)",
+        type="primary",
+        key="exit_closing",
+        on_click=_exit_closing_cb,
+    )
+
     step = st.session_state.closing_step
 
     # ---- STEP 1: Closing audio clue ----
