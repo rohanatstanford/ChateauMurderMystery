@@ -723,6 +723,123 @@ THUNDER_HTML = """
 # Victorious fanfare (Tone.js)
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
+# Tragic music + thunderclap (Web Audio + Tone.js)
+# -----------------------------------------------------------------------------
+# Played when nobody correctly accused the murderer. Opens with a thunderclap,
+# then a slow descending D-minor lament on violin/pad with heavy reverb.
+TRAGIC_HTML = """
+<!DOCTYPE html><html><head></head><body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+<script>
+(async function() {
+  // --- Thunderclap (raw Web Audio) ---
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  if (Ctx) {
+    const ctx = new Ctx();
+    if (ctx.state === 'suspended') { try { await ctx.resume(); } catch (e) {} }
+    function noiseBuf(dur, decay) {
+      const sr = ctx.sampleRate;
+      const len = Math.max(1, Math.floor(sr * dur));
+      const buf = ctx.createBuffer(1, len, sr);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) {
+        d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (sr * decay));
+      }
+      return buf;
+    }
+    function crack(when, vol) {
+      const src = ctx.createBufferSource();
+      src.buffer = noiseBuf(0.4, 0.07);
+      const filt = ctx.createBiquadFilter();
+      filt.type = 'lowpass';
+      filt.frequency.setValueAtTime(9500, when);
+      filt.frequency.exponentialRampToValueAtTime(500, when + 0.45);
+      const g = ctx.createGain();
+      g.gain.value = vol;
+      src.connect(filt).connect(g).connect(ctx.destination);
+      src.start(when); src.stop(when + 0.5);
+    }
+    function rumble(when, dur, vol) {
+      const src = ctx.createBufferSource();
+      src.buffer = noiseBuf(dur, dur / 3.5);
+      const f1 = ctx.createBiquadFilter();
+      f1.type = 'lowpass'; f1.frequency.value = 200;
+      const f2 = ctx.createBiquadFilter();
+      f2.type = 'lowshelf'; f2.frequency.value = 100; f2.gain.value = 16;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(vol, when);
+      g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+      src.connect(f1).connect(f2).connect(g).connect(ctx.destination);
+      src.start(when); src.stop(when + dur + 0.1);
+    }
+    const t0 = ctx.currentTime + 0.15;
+    crack(t0, 1.0);
+    rumble(t0 + 0.05, 6.5, 0.85);
+    crack(t0 + 0.65, 0.55);
+    rumble(t0 + 0.7, 3.5, 0.45);
+  }
+
+  // --- Lament (Tone.js) ---
+  try { await Tone.start(); } catch (e) {}
+  Tone.Destination.volume.value = -6;
+  const reverb = new Tone.Reverb({ decay: 9, wet: 0.7 }).toDestination();
+  const delay = new Tone.FeedbackDelay({ delayTime: '4n', feedback: 0.35, wet: 0.25 }).connect(reverb);
+
+  // Sustained somber pad
+  const pad = new Tone.PolySynth(Tone.AMSynth, {
+    harmonicity: 1.2,
+    oscillator: { type: 'triangle' },
+    envelope: { attack: 1.8, decay: 1, sustain: 0.65, release: 5 },
+    modulation: { type: 'sine' },
+    modulationEnvelope: { attack: 2.5, decay: 0, sustain: 1, release: 5 }
+  }).connect(reverb);
+  pad.volume.value = -10;
+
+  // Lead "violin" voice
+  const violin = new Tone.MonoSynth({
+    oscillator: { type: 'sawtooth' },
+    envelope: { attack: 0.6, decay: 0.4, sustain: 0.7, release: 2.5 },
+    filter: { Q: 2, frequency: 1400, type: 'lowpass' },
+    filterEnvelope: { attack: 0.2, decay: 0.5, sustain: 0.5, release: 2, baseFrequency: 400, octaves: 2.2 }
+  }).connect(delay);
+  violin.volume.value = -14;
+
+  // Low cello drone for gravitas
+  const cello = new Tone.Synth({
+    oscillator: { type: 'triangle' },
+    envelope: { attack: 1.0, decay: 0.5, sustain: 0.9, release: 4 }
+  }).connect(reverb);
+  cello.volume.value = -18;
+
+  const now = Tone.now() + 1.6;  // start after the thunderclap
+
+  // Slow descending lament in D minor: A4 — F4 — D4 — C#4 — A3
+  // (sospirosa, like Lacrimosa)
+  violin.triggerAttackRelease('A4',  '2n',   now + 0.0);
+  violin.triggerAttackRelease('G4',  '4n',   now + 1.4);
+  violin.triggerAttackRelease('F4',  '2n.',  now + 2.0);
+  violin.triggerAttackRelease('E4',  '4n',   now + 3.8);
+  violin.triggerAttackRelease('D4',  '2n',   now + 4.4);
+  violin.triggerAttackRelease('C#4', '4n.',  now + 5.8);
+  violin.triggerAttackRelease('D4',  '1n',   now + 7.0);
+
+  // Pad chords underneath: Dm -> Bb -> Gm -> A7 -> Dm
+  pad.triggerAttackRelease(['D3', 'F3', 'A3'],         '1m', now);
+  pad.triggerAttackRelease(['Bb2','D3', 'F3'],         '2n', now + 2.5);
+  pad.triggerAttackRelease(['G2', 'Bb2','D3'],         '2n', now + 4.0);
+  pad.triggerAttackRelease(['A2', 'C#3','E3'],         '2n', now + 5.5);
+  pad.triggerAttackRelease(['D3', 'F3', 'A3', 'D4'],   '1m', now + 7.0);
+
+  // Cello drone
+  cello.triggerAttackRelease('D2', '2m', now);
+  cello.triggerAttackRelease('A1', '1m', now + 5.5);
+})();
+</script>
+</body></html>
+"""
+
+
+# -----------------------------------------------------------------------------
 # ESC-to-close handler
 # -----------------------------------------------------------------------------
 # Listens for the Escape key on as many DOM contexts as possible and clicks
@@ -1679,8 +1796,11 @@ elif stage == "Closing":
                         unsafe_allow_html=True,
                     )
 
-                # Victorious music — fires once on reveal
-                components.html(VICTORIOUS_HTML, height=0)
+                # Music — victorious if anyone correctly accused, otherwise tragic + thunder
+                if correct_accusers_in_order:
+                    components.html(VICTORIOUS_HTML, height=0)
+                else:
+                    components.html(TRAGIC_HTML, height=0)
 
                 st.markdown("<div style='height:30px'></div>", unsafe_allow_html=True)
                 bb1, bb2 = st.columns(2)
